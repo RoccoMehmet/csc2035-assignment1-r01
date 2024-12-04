@@ -2,6 +2,10 @@
  * Replace the following string of 0s with your student number
  * 000000000
  */
+/*
+ * Replace the following string of 0s with your student number
+ * 000000000
+ */
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -47,11 +51,11 @@ job_t* pri_jobqueue_dequeue(pri_jobqueue_t* pjq, job_t* dst) {
     if (!pjq || pri_jobqueue_is_empty(pjq)) return NULL;
 
     int highest_priority_index = -1;
-    unsigned int highest_priority = ~0U;  // Start with max unsigned value.
+    unsigned int highest_priority = 0;  // Start with the lowest priority possible.
 
     // Find the highest priority job
     for (int i = 0; i < pjq->buf_size; i++) {
-        if (pjq->jobs[i].priority > 0 && pjq->jobs[i].priority < highest_priority) {
+        if (pjq->jobs[i].priority > highest_priority) {
             highest_priority = pjq->jobs[i].priority;
             highest_priority_index = i;
         }
@@ -108,7 +112,7 @@ bool pri_jobqueue_is_empty(pri_jobqueue_t* pjq) {
  * Returns true if the queue is full, false otherwise.
  */
 bool pri_jobqueue_is_full(pri_jobqueue_t* pjq) {
-    return (pjq && pjq->size == pjq->buf_size); // Ensure it checks for exact full condition
+    return (pjq && pjq->size == pjq->buf_size);  // Full when size equals buffer size.
 }
 
 /*
@@ -120,11 +124,11 @@ job_t* pri_jobqueue_peek(pri_jobqueue_t* pjq, job_t* dst) {
     if (!pjq || pri_jobqueue_is_empty(pjq)) return NULL;
 
     int highest_priority_index = -1;
-    unsigned int highest_priority = ~0U;
+    unsigned int highest_priority = 0;  // Start with the lowest priority possible.
 
     // Find the highest priority job
     for (int i = 0; i < pjq->buf_size; i++) {
-        if (pjq->jobs[i].priority > 0 && pjq->jobs[i].priority < highest_priority) {
+        if (pjq->jobs[i].priority > highest_priority) {
             highest_priority = pjq->jobs[i].priority;
             highest_priority_index = i;
         }
