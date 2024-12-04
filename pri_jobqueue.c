@@ -99,7 +99,7 @@ void pri_jobqueue_enqueue(pri_jobqueue_t* pjq, job_t* job) {
  * Returns true if the queue is empty, false otherwise.
  */
 bool pri_jobqueue_is_empty(pri_jobqueue_t* pjq) {
-    return (pjq && pjq->size == 0);
+    return (!pjq || pjq->size == 0);
 }
 
 /*
