@@ -1,13 +1,6 @@
-/*
-* Replace the following string of 0s with your student number
- * 000000000
- */
 #include "ipc_jobqueue.h"
 #include "proc.h"  // For the do_critical_work function
 
-/*
- * DO NOT EDIT the ipc_jobqueue_new function.
- */
 ipc_jobqueue_t* ipc_jobqueue_new(proc_t* proc) {
     // Create a new ipc object and allocate a pri_jobqueue in shared memory
     ipc_jobqueue_t* ijq = ipc_new(proc, "ipc_jobq", sizeof(pri_jobqueue_t));
@@ -22,12 +15,6 @@ ipc_jobqueue_t* ipc_jobqueue_new(proc_t* proc) {
     return ijq;
 }
 
-/*
- * ipc_jobqueue_dequeue(ipc_jobqueue_t* ijq, job_t* dst)
- *
- * This is a wrapper for pri_jobqueue_dequeue.
- * Adds the critical work delay as specified.
- */
 job_t* ipc_jobqueue_dequeue(ipc_jobqueue_t* ijq, job_t* dst) {
     if (!ijq) return NULL;
 
@@ -38,12 +25,6 @@ job_t* ipc_jobqueue_dequeue(ipc_jobqueue_t* ijq, job_t* dst) {
     return pri_jobqueue_dequeue((pri_jobqueue_t*)ijq->addr, dst);
 }
 
-/*
- * ipc_jobqueue_enqueue(ipc_jobqueue_t* ijq, job_t* job)
- *
- * This is a wrapper for pri_jobqueue_enqueue.
- * Adds the critical work delay as specified.
- */
 void ipc_jobqueue_enqueue(ipc_jobqueue_t* ijq, job_t* job) {
     if (!ijq || !job) return;
 
@@ -54,12 +35,6 @@ void ipc_jobqueue_enqueue(ipc_jobqueue_t* ijq, job_t* job) {
     pri_jobqueue_enqueue((pri_jobqueue_t*)ijq->addr, job);
 }
 
-/*
- * ipc_jobqueue_is_empty(ipc_jobqueue_t* ijq)
- *
- * This is a wrapper for pri_jobqueue_is_empty.
- * Adds the critical work delay as specified.
- */
 bool ipc_jobqueue_is_empty(ipc_jobqueue_t* ijq) {
     if (!ijq) return true;
 
@@ -70,12 +45,6 @@ bool ipc_jobqueue_is_empty(ipc_jobqueue_t* ijq) {
     return pri_jobqueue_is_empty((pri_jobqueue_t*)ijq->addr);
 }
 
-/*
- * ipc_jobqueue_is_full(ipc_jobqueue_t* ijq)
- *
- * This is a wrapper for pri_jobqueue_is_full.
- * Adds the critical work delay as specified.
- */
 bool ipc_jobqueue_is_full(ipc_jobqueue_t* ijq) {
     if (!ijq) return false;
 
@@ -86,12 +55,6 @@ bool ipc_jobqueue_is_full(ipc_jobqueue_t* ijq) {
     return pri_jobqueue_is_full((pri_jobqueue_t*)ijq->addr);
 }
 
-/*
- * ipc_jobqueue_peek(ipc_jobqueue_t* ijq, job_t* dst)
- *
- * This is a wrapper for pri_jobqueue_peek.
- * Adds the critical work delay as specified.
- */
 job_t* ipc_jobqueue_peek(ipc_jobqueue_t* ijq, job_t* dst) {
     if (!ijq) return NULL;
 
@@ -102,12 +65,6 @@ job_t* ipc_jobqueue_peek(ipc_jobqueue_t* ijq, job_t* dst) {
     return pri_jobqueue_peek((pri_jobqueue_t*)ijq->addr, dst);
 }
 
-/*
- * ipc_jobqueue_size(ipc_jobqueue_t* ijq)
- *
- * This is a wrapper for pri_jobqueue_size.
- * Adds the critical work delay as specified.
- */
 int ipc_jobqueue_size(ipc_jobqueue_t* ijq) {
     if (!ijq) return 0;
 
@@ -118,12 +75,6 @@ int ipc_jobqueue_size(ipc_jobqueue_t* ijq) {
     return pri_jobqueue_size((pri_jobqueue_t*)ijq->addr);
 }
 
-/*
- * ipc_jobqueue_space(ipc_jobqueue_t* ijq)
- *
- * This is a wrapper for pri_jobqueue_space.
- * Adds the critical work delay as specified.
- */
 int ipc_jobqueue_space(ipc_jobqueue_t* ijq) {
     if (!ijq) return 0;
 
@@ -134,11 +85,6 @@ int ipc_jobqueue_space(ipc_jobqueue_t* ijq) {
     return pri_jobqueue_space((pri_jobqueue_t*)ijq->addr);
 }
 
-/*
- * ipc_jobqueue_delete(ipc_jobqueue_t* ijq)
- *
- * Deletes an ipc_jobqueue, deallocating resources associated with the queue.
- */
 void ipc_jobqueue_delete(ipc_jobqueue_t* ijq) {
     if (!ijq) return;
 
