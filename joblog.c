@@ -94,12 +94,15 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
  */
 void joblog_write(proc_t* proc, job_t* job) {
     if (!proc || !job) {
+        // If either proc or job is NULL, set errno to EINVAL and return immediately
         errno = EINVAL;
         return;
     }
 
+    // Proceed with writing the log entry if both proc and job are valid
     char* log_name = new_log_name(proc);
     if (!log_name) {
+        // If memory allocation for log name failed, set errno to ENOMEM
         errno = ENOMEM;
         return;
     }
@@ -107,13 +110,14 @@ void joblog_write(proc_t* proc, job_t* job) {
     FILE* file = fopen(log_name, "a");
     free(log_name);  // Clean up the dynamically allocated string
     if (!file) {
-        errno = ENOENT;  // Couldn't open file for appending
+        // If the log file could not be opened for appending, set errno to ENOENT
+        errno = ENOENT;
         return;
     }
 
     char job_str[JOB_STR_SIZE];
     if (job_to_str(job, job_str)) {
-        fprintf(file, "%s\n", job_str);  // Append the job string
+        fprintf(file, "%s\n", job_str);  // Append the job string to the file
     }
 
     fclose(file);
