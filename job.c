@@ -21,6 +21,11 @@ job_t* job_new(pid_t pid, unsigned int id, unsigned int priority, const char* la
 job_t* job_copy(job_t* src, job_t* dst) {
     if (!src) return NULL;
 
+    // Validate the source label
+    if (strnlen(src->label, MAX_NAME_SIZE) != MAX_NAME_SIZE - 1) {
+        return NULL;  // Invalid label
+    }
+
     if (dst == src) {
         return dst;  // No action needed if src and dst are identical.
     }
@@ -78,7 +83,9 @@ job_t* job_set(job_t* job, pid_t pid, unsigned int id, unsigned int priority, co
     if (!label || label[0] == '\0') {
         strncpy(job->label, PAD_STRING, MAX_NAME_SIZE - 1);
     } else {
-        snprintf(job->label, MAX_NAME_SIZE, "%-*.*s", MAX_NAME_SIZE - 1, MAX_NAME_SIZE - 1, label);
+        size_t len = strnlen(label, MAX_NAME_SIZE - 1);
+        strncpy(job->label, label, len);
+        memset(job->label + len, '*', MAX_NAME_SIZE - 1 - len);
     }
     job->label[MAX_NAME_SIZE - 1] = '\0';
 
@@ -89,13 +96,18 @@ job_t* job_set(job_t* job, pid_t pid, unsigned int id, unsigned int priority, co
  * Convert a job to its string representation.
  */
 char* job_to_str(job_t* job, char* str) {
-    if (!job || !str) {
+    if (!job || strnlen(job->label, MAX_NAME_SIZE) != MAX_NAME_SIZE - 1) {
+        return NULL;  // Invalid job or label
+    }
+
+    if (!str) {
         str = (char*) malloc(JOB_STR_SIZE);
         if (!str) return NULL;  // Allocation failed.
     }
 
-    if (snprintf(str, JOB_STR_SIZE, JOB_STR_FMT, job->pid, job->id, job->priority, job->label) >= JOB_STR_SIZE) {
-        free(str);
+    int ret = snprintf(str, JOB_STR_SIZE, JOB_STR_FMT, job->pid, job->id, job->priority, job->label);
+    if (ret < 0 || ret >= JOB_STR_SIZE) {
+        if (!str) free(str);
         return NULL;  // String too long.
     }
 
@@ -106,7 +118,7 @@ char* job_to_str(job_t* job, char* str) {
  * Convert a string representation of a job back to a job.
  */
 job_t* str_to_job(char* str, job_t* job) {
-    if (!str || strlen(str) != JOB_STR_SIZE - 1) return NULL;
+    if (!str || strnlen(str, JOB_STR_SIZE + 1) != JOB_STR_SIZE - 1) return NULL;
 
     pid_t pid;
     unsigned int id, priority;
