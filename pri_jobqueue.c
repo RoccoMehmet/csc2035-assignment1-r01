@@ -99,7 +99,8 @@ void pri_jobqueue_enqueue(pri_jobqueue_t* pjq, job_t* job) {
  * Returns true if the queue is empty, false otherwise.
  */
 bool pri_jobqueue_is_empty(pri_jobqueue_t* pjq) {
-    return (pjq && pjq->size == 0);
+    if (!pjq) return true;  // If the queue pointer is NULL, return true (empty).
+    return (pjq->size == 0);
 }
 
 /*
@@ -108,7 +109,8 @@ bool pri_jobqueue_is_empty(pri_jobqueue_t* pjq) {
  * Returns true if the queue is full, false otherwise.
  */
 bool pri_jobqueue_is_full(pri_jobqueue_t* pjq) {
-    return (pjq && pjq->size == pjq->buf_size); // Ensure it checks for exact full condition
+    if (!pjq) return false;  // If the queue pointer is NULL, return false (not full).
+    return (pjq->size == pjq->buf_size);
 }
 
 /*
@@ -148,7 +150,8 @@ job_t* pri_jobqueue_peek(pri_jobqueue_t* pjq, job_t* dst) {
  * Returns the current size of the queue (number of valid jobs).
  */
 int pri_jobqueue_size(pri_jobqueue_t* pjq) {
-    return pjq ? pjq->size : 0;
+    if (!pjq) return 0;  // Return 0 if queue pointer is NULL.
+    return pjq->size;
 }
 
 /*
@@ -157,7 +160,8 @@ int pri_jobqueue_size(pri_jobqueue_t* pjq) {
  * Returns the available space in the queue.
  */
 int pri_jobqueue_space(pri_jobqueue_t* pjq) {
-    return pjq ? (pjq->buf_size - pjq->size) : 0;
+    if (!pjq) return 0;  // Return 0 if queue pointer is NULL.
+    return (pjq->buf_size - pjq->size);
 }
 
 /*
