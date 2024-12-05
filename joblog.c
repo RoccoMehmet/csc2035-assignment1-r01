@@ -11,32 +11,21 @@
 #include "joblog.h"
 
 /*
- * DO NOT EDIT the new_log_name function. It is a private helper
- * function provided for you to create a log name from a process
- * descriptor for use when reading, writing and deleting a log file.
- *
- * You must work out what the function does in order to use it properly
- * and to clean up after use.
+ * DO NOT EDIT the new_log_name function.
  */
 static char* new_log_name(proc_t* proc) {
     static char* joblog_name_fmt = "%s/%.31s%07d.txt";
-                                // string format for the name of a log file
-                                // declared static to have only one instance
 
     if (!proc)
         return NULL;
 
     char* log_name;
-
-    asprintf(&log_name, joblog_name_fmt, JOBLOG_PATH, proc->type_label,
-        proc->id);
-
+    asprintf(&log_name, joblog_name_fmt, JOBLOG_PATH, proc->type_label, proc->id);
     return log_name;
 }
 
 /*
- * DO NOT EDIT the joblog_init function that sets up the log directory
- * if it does not already exist.
+ * DO NOT EDIT the joblog_init function.
  */
 int joblog_init(proc_t* proc) {
     if (!proc) {
@@ -51,15 +40,14 @@ int joblog_init(proc_t* proc) {
         if (stat(JOBLOG_PATH, &sb) != 0) {
             errno = 0;
             r = mkdir(JOBLOG_PATH, 0777);
-        }  else if (!S_ISDIR(sb.st_mode)) {
+        } else if (!S_ISDIR(sb.st_mode)) {
             unlink(JOBLOG_PATH);
             errno = 0;
             r = mkdir(JOBLOG_PATH, 0777);
         }
     }
 
-    joblog_delete(proc);    // in case log exists for proc
-
+    joblog_delete(proc);    // In case log exists for proc.
     return r;
 }
 
@@ -81,6 +69,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     FILE* file = fopen(log_name, "r");
     free(log_name);  // Clean up the dynamically allocated string.
     if (!file) {
+        errno = ENOENT;
         return NULL;  // File couldn't be opened.
     }
 
@@ -90,7 +79,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     while (fgets(line, sizeof(line), file)) {
         if (current_entry == entry_num) {
             fclose(file);
-            return str_to_job(line, job);
+            return str_to_job(line, job);  // Convert the line to a job object.
         }
         current_entry++;
     }
@@ -118,12 +107,15 @@ void joblog_write(proc_t* proc, job_t* job) {
     FILE* file = fopen(log_name, "a");
     free(log_name);  // Clean up the dynamically allocated string.
     if (!file) {
+        errno = EIO;
         return;  // Couldn't open file for appending.
     }
 
     char job_str[JOB_STR_SIZE];
     if (job_to_str(job, job_str)) {
         fprintf(file, "%s\n", job_str);  // Append the job string.
+    } else {
+        errno = EINVAL;  // Handle job string conversion errors.
     }
 
     fclose(file);
