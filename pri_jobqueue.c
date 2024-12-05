@@ -49,7 +49,7 @@ job_t* pri_jobqueue_dequeue(pri_jobqueue_t* pjq, job_t* dst) {
     int highest_priority_index = -1;
     unsigned int highest_priority = ~0U;  // Start with max unsigned value.
 
-    // Find the highest priority job
+    // Find the highest priority job (lowest priority value represents the highest priority)
     for (int i = 0; i < pjq->buf_size; i++) {
         if (pjq->jobs[i].priority > 0 && pjq->jobs[i].priority < highest_priority) {
             highest_priority = pjq->jobs[i].priority;
@@ -110,7 +110,7 @@ bool pri_jobqueue_is_empty(pri_jobqueue_t* pjq) {
  */
 bool pri_jobqueue_is_full(pri_jobqueue_t* pjq) {
     if (!pjq) return false;  // If the queue pointer is NULL, return false (not full).
-    return (pjq->size == pjq->buf_size);
+    return (pjq->size == pjq->buf_size); // Ensure it checks for exact full condition
 }
 
 /*
