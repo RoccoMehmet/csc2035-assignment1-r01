@@ -1,7 +1,3 @@
-/*
- * Replace the following string of 0s with your student number
- * 000000000
- */
 #include <fcntl.h>          /* For O_* constants */
 #include <sys/stat.h>       /* For mode constants */
 #include <semaphore.h>
@@ -79,15 +75,24 @@ sem_jobqueue_t* sem_jobqueue_new(proc_t* proc) {
 
 // Dequeue a job from the queue
 job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
-    if (!sjq || sem_wait(sjq->full) == -1) return NULL;
+    if (!sjq) return NULL;
+
+    // Wait for the full semaphore (jobs available)
+    if (sem_wait(sjq->full) == -1) return NULL;
+    
+    // Lock the mutex to ensure exclusive access to the queue
     if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->full);
+        sem_post(sjq->full); // Unlock full semaphore if mutex failed
         return NULL;
     }
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Dequeue the job
     job_t* job = ipc_jobqueue_dequeue(sjq->ijq, dst);
 
+    // Unlock mutex and signal the empty semaphore (space available)
     sem_post(sjq->mutex);
     sem_post(sjq->empty);
 
@@ -96,15 +101,24 @@ job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
 
 // Enqueue a job into the queue
 void sem_jobqueue_enqueue(sem_jobqueue_t* sjq, job_t* job) {
-    if (!sjq || !job || sem_wait(sjq->empty) == -1) return;
+    if (!sjq || !job) return;
+
+    // Wait for the empty semaphore (space available)
+    if (sem_wait(sjq->empty) == -1) return;
+
+    // Lock the mutex to ensure exclusive access to the queue
     if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->empty);
+        sem_post(sjq->empty); // Unlock empty semaphore if mutex failed
         return;
     }
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Enqueue the job
     ipc_jobqueue_enqueue(sjq->ijq, job);
 
+    // Unlock mutex and signal the full semaphore (job added)
     sem_post(sjq->mutex);
     sem_post(sjq->full);
 }
@@ -113,11 +127,16 @@ void sem_jobqueue_enqueue(sem_jobqueue_t* sjq, job_t* job) {
 bool sem_jobqueue_is_empty(sem_jobqueue_t* sjq) {
     if (!sjq) return true;
 
+    // Lock the mutex for exclusive access
     if (sem_wait(sjq->mutex) == -1) return true;
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Check if the queue is empty
     bool is_empty = ipc_jobqueue_is_empty(sjq->ijq);
 
+    // Unlock mutex
     sem_post(sjq->mutex);
     return is_empty;
 }
@@ -126,11 +145,16 @@ bool sem_jobqueue_is_empty(sem_jobqueue_t* sjq) {
 bool sem_jobqueue_is_full(sem_jobqueue_t* sjq) {
     if (!sjq) return true;
 
+    // Lock the mutex for exclusive access
     if (sem_wait(sjq->mutex) == -1) return true;
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Check if the queue is full
     bool is_full = ipc_jobqueue_is_full(sjq->ijq);
 
+    // Unlock mutex
     sem_post(sjq->mutex);
     return is_full;
 }
@@ -139,11 +163,16 @@ bool sem_jobqueue_is_full(sem_jobqueue_t* sjq) {
 job_t* sem_jobqueue_peek(sem_jobqueue_t* sjq, job_t* dst) {
     if (!sjq) return NULL;
 
+    // Lock the mutex for exclusive access
     if (sem_wait(sjq->mutex) == -1) return NULL;
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Peek at the job
     job_t* job = ipc_jobqueue_peek(sjq->ijq, dst);
 
+    // Unlock mutex
     sem_post(sjq->mutex);
     return job;
 }
@@ -152,11 +181,16 @@ job_t* sem_jobqueue_peek(sem_jobqueue_t* sjq, job_t* dst) {
 int sem_jobqueue_size(sem_jobqueue_t* sjq) {
     if (!sjq) return 0;
 
+    // Lock the mutex for exclusive access
     if (sem_wait(sjq->mutex) == -1) return 0;
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Get the size of the queue
     int size = ipc_jobqueue_size(sjq->ijq);
 
+    // Unlock mutex
     sem_post(sjq->mutex);
     return size;
 }
@@ -165,11 +199,16 @@ int sem_jobqueue_size(sem_jobqueue_t* sjq) {
 int sem_jobqueue_space(sem_jobqueue_t* sjq) {
     if (!sjq) return 0;
 
+    // Lock the mutex for exclusive access
     if (sem_wait(sjq->mutex) == -1) return 0;
 
+    // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
+
+    // Get the space in the queue
     int space = ipc_jobqueue_space(sjq->ijq);
 
+    // Unlock mutex
     sem_post(sjq->mutex);
     return space;
 }
@@ -178,9 +217,12 @@ int sem_jobqueue_space(sem_jobqueue_t* sjq) {
 void sem_jobqueue_delete(sem_jobqueue_t* sjq) {
     if (!sjq) return;
 
+    // Clean up semaphores and job queue
     sem_delete(sjq->mutex, sem_mutex_label);
     sem_delete(sjq->full, sem_full_label);
     sem_delete(sjq->empty, sem_empty_label);
     ipc_jobqueue_delete(sjq->ijq);
+
+    // Free the memory
     free(sjq);
 }
