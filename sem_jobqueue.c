@@ -1,3 +1,7 @@
+/*
+ * Replace the following string of 0s with your student number
+ * 000000000
+ */
 #include <fcntl.h>          /* For O_* constants */
 #include <sys/stat.h>       /* For mode constants */
 #include <semaphore.h>
@@ -76,49 +80,61 @@ sem_jobqueue_t* sem_jobqueue_new(proc_t* proc) {
 // Dequeue a job from the queue
 job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
     if (!sjq) return NULL;
-    
-    // Wait on the full semaphore to ensure there is a job to dequeue
-    if (sem_wait(sjq->full) == -1) return NULL;
-    if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->full);
+
+    printf("Waiting on full semaphore...\n"); // Debugging
+    if (sem_wait(sjq->full) == -1) {
+        perror("sem_wait on full failed");
         return NULL;
     }
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
+    if (sem_wait(sjq->mutex) == -1) {
+        sem_post(sjq->full); // Release full semaphore
+        perror("sem_wait on mutex failed");
+        return NULL;
+    }
+
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
 
     job_t* job = ipc_jobqueue_dequeue(sjq->ijq, dst);
+    if (job == NULL) {
+        printf("Dequeue failed: Queue is empty.\n"); // Debugging
+    }
 
     sem_post(sjq->mutex);
     sem_post(sjq->empty); // Signal that the queue has space
-
+    printf("Exiting critical section\n"); // Debugging
     return job;
 }
 
 // Enqueue a job into the queue
 void sem_jobqueue_enqueue(sem_jobqueue_t* sjq, job_t* job) {
-    if (!sjq || !job) return;
+    if (!sjq || !job || sem_wait(sjq->empty) == -1) return;
 
-    // Wait on the empty semaphore to ensure there is space in the queue
-    if (sem_wait(sjq->empty) == -1) return;
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->empty);
+        sem_post(sjq->empty); // Release empty semaphore
         return;
     }
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
-
     ipc_jobqueue_enqueue(sjq->ijq, job);
 
     sem_post(sjq->mutex);
-    sem_post(sjq->full); // Signal that the queue now has a job
+    sem_post(sjq->full); // Signal that the queue is full
+    printf("Exiting critical section\n"); // Debugging
 }
 
 // Check if the queue is empty
 bool sem_jobqueue_is_empty(sem_jobqueue_t* sjq) {
     if (!sjq) return true;
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) return true;
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
     bool is_empty = ipc_jobqueue_is_empty(sjq->ijq);
 
@@ -130,8 +146,10 @@ bool sem_jobqueue_is_empty(sem_jobqueue_t* sjq) {
 bool sem_jobqueue_is_full(sem_jobqueue_t* sjq) {
     if (!sjq) return true;
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) return true;
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
     bool is_full = ipc_jobqueue_is_full(sjq->ijq);
 
@@ -143,8 +161,10 @@ bool sem_jobqueue_is_full(sem_jobqueue_t* sjq) {
 job_t* sem_jobqueue_peek(sem_jobqueue_t* sjq, job_t* dst) {
     if (!sjq) return NULL;
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) return NULL;
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
     job_t* job = ipc_jobqueue_peek(sjq->ijq, dst);
 
@@ -156,8 +176,10 @@ job_t* sem_jobqueue_peek(sem_jobqueue_t* sjq, job_t* dst) {
 int sem_jobqueue_size(sem_jobqueue_t* sjq) {
     if (!sjq) return 0;
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) return 0;
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
     int size = ipc_jobqueue_size(sjq->ijq);
 
@@ -169,8 +191,10 @@ int sem_jobqueue_size(sem_jobqueue_t* sjq) {
 int sem_jobqueue_space(sem_jobqueue_t* sjq) {
     if (!sjq) return 0;
 
+    printf("Waiting on mutex semaphore...\n"); // Debugging
     if (sem_wait(sjq->mutex) == -1) return 0;
 
+    printf("Critical section entered\n"); // Debugging
     do_critical_work(sjq->ijq->proc);
     int space = ipc_jobqueue_space(sjq->ijq);
 
