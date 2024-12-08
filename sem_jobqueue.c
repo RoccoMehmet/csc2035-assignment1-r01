@@ -60,6 +60,7 @@ sem_jobqueue_t* sem_jobqueue_new(proc_t* proc) {
     r |= sem_new(&sjq->empty, sem_empty_label, ipc_jobqueue_space(sjq->ijq), EMPTY_SEM_SUCCESS);
 
     if (r == ALL_SEM_SUCCESS) {
+        printf("sem_jobqueue_new: Successfully created semaphores\n");
         return sjq;
     }
 
@@ -70,6 +71,7 @@ sem_jobqueue_t* sem_jobqueue_new(proc_t* proc) {
     ipc_jobqueue_delete(sjq->ijq);
     free(sjq);
 
+    printf("sem_jobqueue_new: Semaphore creation failed\n");
     return NULL;
 }
 
@@ -77,14 +79,20 @@ sem_jobqueue_t* sem_jobqueue_new(proc_t* proc) {
 job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
     if (!sjq) return NULL;
 
-    // Wait for the full semaphore (jobs available)
-    if (sem_wait(sjq->full) == -1) return NULL;
-    
-    // Lock the mutex to ensure exclusive access to the queue
-    if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->full); // Unlock full semaphore if mutex failed
+    printf("sem_jobqueue_dequeue: Waiting for 'full' semaphore...\n");
+    if (sem_wait(sjq->full) == -1) {
+        perror("sem_wait full failed");
         return NULL;
     }
+    printf("sem_jobqueue_dequeue: Acquired 'full' semaphore\n");
+
+    printf("sem_jobqueue_dequeue: Waiting for 'mutex' semaphore...\n");
+    if (sem_wait(sjq->mutex) == -1) {
+        sem_post(sjq->full); // Unlock full semaphore if mutex failed
+        perror("sem_wait mutex failed");
+        return NULL;
+    }
+    printf("sem_jobqueue_dequeue: Acquired 'mutex' semaphore\n");
 
     // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
@@ -93,7 +101,11 @@ job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
     job_t* job = ipc_jobqueue_dequeue(sjq->ijq, dst);
 
     // Unlock mutex and signal the empty semaphore (space available)
+    printf("sem_jobqueue_dequeue: Releasing 'mutex' semaphore\n");
     sem_post(sjq->mutex);
+    printf("sem_jobqueue_dequeue: Released 'mutex' semaphore\n");
+
+    printf("sem_jobqueue_dequeue: Signaling 'empty' semaphore\n");
     sem_post(sjq->empty);
 
     return job;
@@ -103,14 +115,20 @@ job_t* sem_jobqueue_dequeue(sem_jobqueue_t* sjq, job_t* dst) {
 void sem_jobqueue_enqueue(sem_jobqueue_t* sjq, job_t* job) {
     if (!sjq || !job) return;
 
-    // Wait for the empty semaphore (space available)
-    if (sem_wait(sjq->empty) == -1) return;
-
-    // Lock the mutex to ensure exclusive access to the queue
-    if (sem_wait(sjq->mutex) == -1) {
-        sem_post(sjq->empty); // Unlock empty semaphore if mutex failed
+    printf("sem_jobqueue_enqueue: Waiting for 'empty' semaphore...\n");
+    if (sem_wait(sjq->empty) == -1) {
+        perror("sem_wait empty failed");
         return;
     }
+    printf("sem_jobqueue_enqueue: Acquired 'empty' semaphore\n");
+
+    printf("sem_jobqueue_enqueue: Waiting for 'mutex' semaphore...\n");
+    if (sem_wait(sjq->mutex) == -1) {
+        sem_post(sjq->empty); // Unlock empty semaphore if mutex failed
+        perror("sem_wait mutex failed");
+        return;
+    }
+    printf("sem_jobqueue_enqueue: Acquired 'mutex' semaphore\n");
 
     // Critical work: simulate processing
     do_critical_work(sjq->ijq->proc);
@@ -119,7 +137,11 @@ void sem_jobqueue_enqueue(sem_jobqueue_t* sjq, job_t* job) {
     ipc_jobqueue_enqueue(sjq->ijq, job);
 
     // Unlock mutex and signal the full semaphore (job added)
+    printf("sem_jobqueue_enqueue: Releasing 'mutex' semaphore\n");
     sem_post(sjq->mutex);
+    printf("sem_jobqueue_enqueue: Released 'mutex' semaphore\n");
+
+    printf("sem_jobqueue_enqueue: Signaling 'full' semaphore\n");
     sem_post(sjq->full);
 }
 
