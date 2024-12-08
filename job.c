@@ -38,8 +38,9 @@ job_t* job_copy(job_t* src, job_t* dst) {
     dst->pid = src->pid;
     dst->id = src->id;
     dst->priority = src->priority;
+    // Safely copy the label with null-termination
     strncpy(dst->label, src->label, MAX_NAME_SIZE - 1);
-    dst->label[MAX_NAME_SIZE - 1] = '\0';
+    dst->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
 
     return dst;
 }
@@ -53,8 +54,9 @@ void job_init(job_t* job) {
     job->pid = 0;
     job->id = 0;
     job->priority = 0;
+    // Safely set the label with padding
     strncpy(job->label, PAD_STRING, MAX_NAME_SIZE - 1);
-    job->label[MAX_NAME_SIZE - 1] = '\0';
+    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
 }
 
 /*
@@ -80,14 +82,16 @@ job_t* job_set(job_t* job, pid_t pid, unsigned int id, unsigned int priority, co
     job->id = id;
     job->priority = priority;
 
+    // Safely handle label input
     if (!label || label[0] == '\0') {
         strncpy(job->label, PAD_STRING, MAX_NAME_SIZE - 1);
     } else {
         size_t len = strnlen(label, MAX_NAME_SIZE - 1);
         strncpy(job->label, label, len);
+        // Pad the label with '*' if it's shorter than the max size
         memset(job->label + len, '*', MAX_NAME_SIZE - 1 - len);
     }
-    job->label[MAX_NAME_SIZE - 1] = '\0';
+    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
 
     return job;
 }
@@ -107,7 +111,7 @@ char* job_to_str(job_t* job, char* str) {
 
     int ret = snprintf(str, JOB_STR_SIZE, JOB_STR_FMT, job->pid, job->id, job->priority, job->label);
     if (ret < 0 || ret >= JOB_STR_SIZE) {
-        if (!str) free(str);
+        if (str) free(str);
         return NULL;  // String too long.
     }
 
@@ -136,8 +140,9 @@ job_t* str_to_job(char* str, job_t* job) {
     job->pid = pid;
     job->id = id;
     job->priority = priority;
+    // Safely copy the label
     strncpy(job->label, label, MAX_NAME_SIZE - 1);
-    job->label[MAX_NAME_SIZE - 1] = '\0';
+    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
 
     return job;
 }
