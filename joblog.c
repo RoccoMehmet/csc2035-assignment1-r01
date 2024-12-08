@@ -5,7 +5,7 @@
 #include "joblog.h"
 #include "job.h"
 #include "proc.h"
-
+#include <sys/stat.h>
 /*
  * joblog_init(proc_t* proc)
  * 
