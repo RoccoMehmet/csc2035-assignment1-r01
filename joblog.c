@@ -25,10 +25,12 @@ typedef struct {
 char* get_log_filename(proc_t* proc) {
     static char log_fname[128];
 
-    // Handle special case for pid == 0
+    // Check if pid is 0 (special case)
     if (proc->pid == 0) {
-        snprintf(log_fname, sizeof(log_fname), "./out/joblog_init.txt");
+        // If the pid is 0, we use a fixed file name (not based on PID)
+        snprintf(log_fname, sizeof(log_fname), "./out/joblog_0.txt");
     } else {
+        // Normal behavior for other pids
         snprintf(log_fname, sizeof(log_fname), "./out/joblog_%d.txt", proc->pid);
     }
 
@@ -47,14 +49,18 @@ void joblog_write(proc_t* proc, job_t* job) {
         return;
     }
 
+    // Open the log file for appending
     FILE *log_file = fopen(get_log_filename(proc), "a");
     if (log_file == NULL) {
         perror("Error opening log file for writing");
         return;
     }
 
+    // Write the job details to the log file
     fprintf(log_file, "pid:%07d,id:%05d,pri:%05d,label:%-*s\n",
             proc->pid, job->id, job->priority, MAX_NAME_SIZE - 1, job->label);
+
+    // Close the file after writing
     fclose(log_file);
 }
 
@@ -64,6 +70,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
         return NULL;
     }
 
+    // Open the log file for reading
     FILE *log_file = fopen(get_log_filename(proc), "r");
     if (log_file == NULL) {
         perror("Error opening log file for reading");
@@ -74,6 +81,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     char line[JOB_STR_SIZE];
     while (fgets(line, sizeof(line), log_file)) {
         if (line_num == entry_num) {
+            // Parse the job details from the log entry
             sscanf(line, "pid:%d,id:%d,pri:%d,label:%s", 
                    &job->pid, &job->id, &job->priority, job->label);
             fclose(log_file);
@@ -92,13 +100,15 @@ int joblog_init(proc_t* proc) {
         return -1;
     }
 
-    // Create the log directory if it does not exist
+    // Create the output directory if it doesn't exist
     if (mkdir("./out", 0777) == -1 && errno != EEXIST) {
         perror("Error creating log directory");
         return -1;
     }
 
+    // Generate log file name
     char *log_filename = get_log_filename(proc);
+
     // Delete any existing log file
     if (unlink(log_filename) == -1 && errno != ENOENT) {
         perror("Error deleting log file");
@@ -114,7 +124,10 @@ void joblog_delete(proc_t* proc) {
         return;
     }
 
+    // Get the log file name
     char *log_filename = get_log_filename(proc);
+
+    // Attempt to delete the log file
     if (unlink(log_filename) == 0) {
         printf("Log file %s deleted successfully.\n", log_filename);
     } else {
