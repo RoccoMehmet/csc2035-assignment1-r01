@@ -31,6 +31,7 @@ char* get_log_filename(proc_t* proc) {
 // Job log write function
 void joblog_write(proc_t* proc, job_t* job) {
     if (proc == NULL || job == NULL) {
+        perror("Invalid arguments to joblog_write");
         return;
     }
 
@@ -40,6 +41,7 @@ void joblog_write(proc_t* proc, job_t* job) {
         return;
     }
 
+    // Ensure the label doesn't exceed MAX_NAME_SIZE
     fprintf(log_file, "pid:%07d,id:%05d,pri:%05d,label:%-*s\n",
             proc->pid, job->id, job->priority, MAX_NAME_SIZE - 1, job->label);
     fclose(log_file);
@@ -70,7 +72,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     }
 
     fclose(log_file);
-    return NULL;
+    return NULL;  // Entry not found
 }
 
 // Job log initialization
@@ -79,6 +81,7 @@ int joblog_init(proc_t* proc) {
         return -1;
     }
 
+    // Create the log directory if it does not exist
     if (proc->is_init) {
         if (mkdir("./out", 0777) == -1 && errno != EEXIST) {
             perror("Error creating log directory");
@@ -88,7 +91,7 @@ int joblog_init(proc_t* proc) {
 
     char *log_filename = get_log_filename(proc);
     if (unlink(log_filename) == -1 && errno != ENOENT) {
-        perror("Error deleting log file");
+        perror("Error deleting existing log file");
         return -1;
     }
 
@@ -112,18 +115,23 @@ void joblog_delete(proc_t* proc) {
 #ifndef TESTING
 int main() {
     proc_t proc = { .pid = getpid(), .is_init = 1 };  // Set process as init
-    joblog_init(&proc);  // Initialize job log system
+    if (joblog_init(&proc) == -1) {
+        fprintf(stderr, "Failed to initialize job log system.\n");
+        return 1;
+    }
 
     job_t job1 = { .id = 1, .priority = 5, .label = "Job_1" };
     joblog_write(&proc, &job1);
 
     job_t read_job;
-    joblog_read(&proc, 0, &read_job);
-    printf("Read Job - PID: %d, ID: %d, Priority: %d, Label: %s\n", 
-            read_job.pid, read_job.id, read_job.priority, read_job.label);
+    if (joblog_read(&proc, 0, &read_job) != NULL) {
+        printf("Read Job - PID: %d, ID: %d, Priority: %d, Label: %s\n", 
+                read_job.pid, read_job.id, read_job.priority, read_job.label);
+    } else {
+        printf("Failed to read job log entry.\n");
+    }
 
     joblog_delete(&proc);
     return 0;
 }
 #endif
-
