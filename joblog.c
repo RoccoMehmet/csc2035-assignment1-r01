@@ -24,7 +24,14 @@ typedef struct {
 // Helper function to get the log file name for a process
 char* get_log_filename(proc_t* proc) {
     static char log_fname[128];
-    snprintf(log_fname, sizeof(log_fname), "./out/joblog_%d.txt", proc->pid);
+
+    // Handle special case for pid == 0
+    if (proc->pid == 0) {
+        snprintf(log_fname, sizeof(log_fname), "./out/joblog_init.txt");
+    } else {
+        snprintf(log_fname, sizeof(log_fname), "./out/joblog_%d.txt", proc->pid);
+    }
+
     return log_fname;
 }
 
