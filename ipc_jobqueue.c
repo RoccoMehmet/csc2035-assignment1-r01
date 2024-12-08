@@ -36,12 +36,12 @@ void ipc_jobqueue_enqueue(ipc_jobqueue_t* ijq, job_t* job) {
 }
 
 bool ipc_jobqueue_is_empty(ipc_jobqueue_t* ijq) {
-    if (!ijq) return true;
+    if (!ijq) return true; // Return true if the queue is NULL
 
     // Simulate critical work
     do_critical_work((proc_t*)ijq);
 
-    // Call the corresponding function in pri_jobqueue
+    // Check if the underlying pri_jobqueue is empty
     return pri_jobqueue_is_empty((pri_jobqueue_t*)ijq->addr);
 }
 
