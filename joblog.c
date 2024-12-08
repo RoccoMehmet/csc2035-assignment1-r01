@@ -31,7 +31,12 @@ char* get_log_filename(proc_t* proc) {
 // Job log write function
 void joblog_write(proc_t* proc, job_t* job) {
     if (proc == NULL || job == NULL) {
-        perror("Invalid arguments to joblog_write");
+        return;
+    }
+
+    // Ensure the output directory exists before writing
+    if (mkdir("./out", 0777) == -1 && errno != EEXIST) {
+        perror("Error creating log directory");
         return;
     }
 
@@ -41,7 +46,6 @@ void joblog_write(proc_t* proc, job_t* job) {
         return;
     }
 
-    // Ensure the label doesn't exceed MAX_NAME_SIZE
     fprintf(log_file, "pid:%07d,id:%05d,pri:%05d,label:%-*s\n",
             proc->pid, job->id, job->priority, MAX_NAME_SIZE - 1, job->label);
     fclose(log_file);
@@ -49,7 +53,7 @@ void joblog_write(proc_t* proc, job_t* job) {
 
 // Job log read function
 job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
-    if (proc == NULL || entry_num < 0) {
+    if (proc == NULL || entry_num < 0 || job == NULL) {
         return NULL;
     }
 
@@ -72,7 +76,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     }
 
     fclose(log_file);
-    return NULL;  // Entry not found
+    return NULL;
 }
 
 // Job log initialization
@@ -82,16 +86,15 @@ int joblog_init(proc_t* proc) {
     }
 
     // Create the log directory if it does not exist
-    if (proc->is_init) {
-        if (mkdir("./out", 0777) == -1 && errno != EEXIST) {
-            perror("Error creating log directory");
-            return -1;
-        }
+    if (mkdir("./out", 0777) == -1 && errno != EEXIST) {
+        perror("Error creating log directory");
+        return -1;
     }
 
     char *log_filename = get_log_filename(proc);
+    // Delete any existing log file
     if (unlink(log_filename) == -1 && errno != ENOENT) {
-        perror("Error deleting existing log file");
+        perror("Error deleting log file");
         return -1;
     }
 
