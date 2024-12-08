@@ -161,6 +161,7 @@ int joblog_init_with_directory() {
     return 0;  // Success
 }
 
+#ifndef TESTING
 // Main program to test joblog functionality
 int main() {
     proc_t proc = { .pid = getpid(), .is_init = 1 };  // Set process as init
@@ -181,3 +182,4 @@ int main() {
 
     return 0;
 }
+#endif
