@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>  // Include for mkdir
 #include "joblog.h"
 #include "job.h"
 #include "proc.h"
@@ -25,7 +26,7 @@ int joblog_init(proc_t* proc) {
     }
 
     char log_file[256];
-    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);  // Changed pid to id
+    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);
 
     // Delete existing log if present
     if (remove(log_file) == -1 && errno != ENOENT) {
@@ -42,14 +43,14 @@ void joblog_write(proc_t* proc, job_t* job) {
     }
 
     char log_file[256];
-    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);  // Changed pid to id
+    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);
 
     FILE *log = fopen(log_file, "a");
     if (log == NULL) {
         return;
     }
 
-    fprintf(log, "pid:%07d,id:%05d,pri:%05d,label:%-*s\n", proc->id, job->id, job->priority, MAX_NAME_SIZE-1, job->label);  // Changed pid to id
+    fprintf(log, "pid:%07d,id:%05d,pri:%05u,label:%-*s\n", proc->id, job->id, job->priority, MAX_NAME_SIZE-1, job->label);
     fclose(log);
 }
 
@@ -60,7 +61,7 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     }
 
     char log_file[256];
-    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);  // Changed pid to id
+    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);
 
     FILE *log = fopen(log_file, "r");
     if (log == NULL) {
@@ -75,7 +76,8 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
                 job = (job_t*)malloc(sizeof(job_t));
             }
 
-            sscanf(line, JOB_STR_FMT, &job->id, &job->priority, job->label);  // Make sure JOB_STR_FMT is used correctly
+            // Correct the format specifier
+            sscanf(line, JOB_STR_FMT, &job->id, &job->priority, job->label); 
             fclose(log);
             return job;
         }
@@ -93,7 +95,7 @@ void joblog_delete(proc_t* proc) {
     }
 
     char log_file[256];
-    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);  // Changed pid to id
+    snprintf(log_file, sizeof(log_file), "./out/joblog_%d.log", proc->id);
 
     if (remove(log_file) == -1) {
         // Handle error if necessary
