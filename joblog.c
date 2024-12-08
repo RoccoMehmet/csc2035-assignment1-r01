@@ -111,27 +111,3 @@ void joblog_delete(proc_t* proc) {
         perror("Error deleting log file");
     }
 }
-
-#ifndef TESTING
-int main() {
-    proc_t proc = { .pid = getpid(), .is_init = 1 };  // Set process as init
-    if (joblog_init(&proc) == -1) {
-        fprintf(stderr, "Failed to initialize job log system.\n");
-        return 1;
-    }
-
-    job_t job1 = { .id = 1, .priority = 5, .label = "Job_1" };
-    joblog_write(&proc, &job1);
-
-    job_t read_job;
-    if (joblog_read(&proc, 0, &read_job) != NULL) {
-        printf("Read Job - PID: %d, ID: %d, Priority: %d, Label: %s\n", 
-                read_job.pid, read_job.id, read_job.priority, read_job.label);
-    } else {
-        printf("Failed to read job log entry.\n");
-    }
-
-    joblog_delete(&proc);
-    return 0;
-}
-#endif
