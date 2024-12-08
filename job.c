@@ -38,9 +38,8 @@ job_t* job_copy(job_t* src, job_t* dst) {
     dst->pid = src->pid;
     dst->id = src->id;
     dst->priority = src->priority;
-    // Safely copy the label with null-termination
     strncpy(dst->label, src->label, MAX_NAME_SIZE - 1);
-    dst->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
+    dst->label[MAX_NAME_SIZE - 1] = '\0';
 
     return dst;
 }
@@ -54,9 +53,8 @@ void job_init(job_t* job) {
     job->pid = 0;
     job->id = 0;
     job->priority = 0;
-    // Safely set the label with padding
     strncpy(job->label, PAD_STRING, MAX_NAME_SIZE - 1);
-    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
+    job->label[MAX_NAME_SIZE - 1] = '\0';
 }
 
 /*
@@ -84,14 +82,16 @@ job_t* job_set(job_t* job, pid_t pid, unsigned int id, unsigned int priority, co
 
     // Safely handle label input
     if (!label || label[0] == '\0') {
+        // Pad the label with 'PAD_STRING' (ensuring null termination)
         strncpy(job->label, PAD_STRING, MAX_NAME_SIZE - 1);
+        job->label[MAX_NAME_SIZE - 1] = '\0';  // Explicit null-termination
     } else {
         size_t len = strnlen(label, MAX_NAME_SIZE - 1);
         strncpy(job->label, label, len);
-        // Pad the label with '*' if it's shorter than the max size
+        // Ensure the label is properly padded with '*' and null-terminated
         memset(job->label + len, '*', MAX_NAME_SIZE - 1 - len);
+        job->label[MAX_NAME_SIZE - 1] = '\0';  // Explicit null-termination
     }
-    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
 
     return job;
 }
@@ -111,7 +111,7 @@ char* job_to_str(job_t* job, char* str) {
 
     int ret = snprintf(str, JOB_STR_SIZE, JOB_STR_FMT, job->pid, job->id, job->priority, job->label);
     if (ret < 0 || ret >= JOB_STR_SIZE) {
-        if (str) free(str);
+        if (!str) free(str);
         return NULL;  // String too long.
     }
 
@@ -140,9 +140,8 @@ job_t* str_to_job(char* str, job_t* job) {
     job->pid = pid;
     job->id = id;
     job->priority = priority;
-    // Safely copy the label
     strncpy(job->label, label, MAX_NAME_SIZE - 1);
-    job->label[MAX_NAME_SIZE - 1] = '\0';  // Ensure null termination
+    job->label[MAX_NAME_SIZE - 1] = '\0';
 
     return job;
 }
