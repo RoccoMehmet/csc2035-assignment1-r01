@@ -27,10 +27,8 @@ char* get_log_filename(proc_t* proc) {
 
     // Check if pid is 0 (special case)
     if (proc->pid == 0) {
-        // If the pid is 0, we use a fixed file name (not based on PID)
         snprintf(log_fname, sizeof(log_fname), "./out/joblog_0.txt");
     } else {
-        // Normal behavior for other pids
         snprintf(log_fname, sizeof(log_fname), "./out/joblog_%d.txt", proc->pid);
     }
 
@@ -82,8 +80,12 @@ job_t* joblog_read(proc_t* proc, int entry_num, job_t* job) {
     while (fgets(line, sizeof(line), log_file)) {
         if (line_num == entry_num) {
             // Parse the job details from the log entry
-            sscanf(line, "pid:%d,id:%d,pri:%d,label:%s", 
-                   &job->pid, &job->id, &job->priority, job->label);
+            if (sscanf(line, "pid:%d,id:%d,pri:%d,label:%63s", 
+                       &job->pid, &job->id, &job->priority, job->label) != 4) {
+                // Error in parsing the log line
+                fclose(log_file);
+                return NULL;
+            }
             fclose(log_file);
             return job;
         }
@@ -109,10 +111,12 @@ int joblog_init(proc_t* proc) {
     // Generate log file name
     char *log_filename = get_log_filename(proc);
 
-    // Delete any existing log file
-    if (unlink(log_filename) == -1 && errno != ENOENT) {
-        perror("Error deleting log file");
-        return -1;
+    // Check if log file exists, then try to delete
+    if (access(log_filename, F_OK) == 0) {
+        if (unlink(log_filename) == -1) {
+            perror("Error deleting log file");
+            return -1;
+        }
     }
 
     return 0;
@@ -127,10 +131,14 @@ void joblog_delete(proc_t* proc) {
     // Get the log file name
     char *log_filename = get_log_filename(proc);
 
-    // Attempt to delete the log file
-    if (unlink(log_filename) == 0) {
-        printf("Log file %s deleted successfully.\n", log_filename);
+    // Check if the log file exists before attempting to delete
+    if (access(log_filename, F_OK) == 0) {
+        if (unlink(log_filename) == 0) {
+            printf("Log file %s deleted successfully.\n", log_filename);
+        } else {
+            perror("Error deleting log file");
+        }
     } else {
-        perror("Error deleting log file");
+        printf("Log file %s does not exist.\n", log_filename);
     }
 }
