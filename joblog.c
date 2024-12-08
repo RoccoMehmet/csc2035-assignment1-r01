@@ -111,8 +111,8 @@ void joblog_delete(proc_t* proc) {
 
 #ifndef TESTING
 int main() {
-    proc_t proc = { .pid = getpid(), .is_init = 1 };
-    joblog_init(&proc);
+    proc_t proc = { .pid = getpid(), .is_init = 1 };  // Set process as init
+    joblog_init(&proc);  // Initialize job log system
 
     job_t job1 = { .id = 1, .priority = 5, .label = "Job_1" };
     joblog_write(&proc, &job1);
@@ -126,3 +126,4 @@ int main() {
     return 0;
 }
 #endif
+
